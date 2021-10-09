@@ -85,7 +85,7 @@ public class CnnSample : MonoBehaviour
             var rt = frames[i].transform as RectTransform;
             rt.anchoredPosition = new Vector2(x, y) * cameraView.rectTransform.rect.size;
             rt.sizeDelta = new Vector2(unit_size, unit_size);
-            frames[i].text = $"{i} : {(int)(100)}%";
+            frames[i].text = $"{i+1} : {(int)(results[i])}%";
 
             if (results[i] == 0)
             {

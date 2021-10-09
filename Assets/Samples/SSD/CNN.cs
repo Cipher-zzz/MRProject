@@ -55,8 +55,8 @@ namespace TensorFlowLite
             int width = myImage.width;
             int height = myImage.height - 1;
 
-            raw = myImage.height / image_size; // int
-            col = myImage.width / image_size; // int
+            raw = myImage.height / image_size; // int, row number of the detection boxes.
+            col = myImage.width / image_size; // int, number of the detection boxes in one raw.
             float[,] myGrayImage = new float[height + 1, width];
 
             for (int i = 0; i < pixels.Length; i++)
@@ -70,7 +70,7 @@ namespace TensorFlowLite
 
             float[,] outputs0 = new float[1, 2];
 
-            frameOutput = new int[raw * col];
+            frameOutput = new int[raw * col]; // the result of each detection box.
 
 
             for (int i = 0; i < raw * col; i++)
@@ -92,7 +92,9 @@ namespace TensorFlowLite
                 //Debug.Log(resultArgMax(outputs0));
                 //Debug.Log(outputs0[0, 0]);
                 //Debug.Log(outputs0[0, 1]);
-                frameOutput[i] = resultArgMax(outputs0);
+
+                //frameOutput[i] = resultArgMax(outputs0);
+                frameOutput[i] = resultDetails(outputs0);
             }
 
             // byte[] imageData = Utils.DecodeTexture(inputTex, inputTex.width, inputTex.height, 0, Flip.VERTICAL);
@@ -173,6 +175,15 @@ namespace TensorFlowLite
                 return 0;
             }
             return 1;
+        }
+
+        public int resultDetails(float[,] result)
+        {
+            if (result[0, 0] > result[0, 1])
+            {
+                return 0;
+            }
+            return (int)(100 * result[0, 1]);
         }
 
         private Texture2D TextureToTexture2D(Texture texture)
