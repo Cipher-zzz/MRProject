@@ -74,18 +74,26 @@ public class CnnSample : MonoBehaviour
 
         int height = cameraView.mainTexture.height;
         int width = cameraView.mainTexture.width;
-        int frame_num = (height / unit_size) * (width / unit_size);
+        // int frame_num = (height / unit_size) * (width / unit_size);
 
         int raw = height / unit_size; // int
         int col = width / unit_size; // int
         for (int i = 0; i< results.Length; i++)
         {
-            float y = -((float)(i / col) / (float)raw) + 0.5f;
+            //float y = -((float)(i / col) / (float)raw) + 0.5f;
+            //float x = ((float)(i % col) / (float)col) - 0.5f;
+
+            //float y = ((float)(i % raw) / (float)raw) - 0.5f + ((float)unit_size / (float)height);
+            //float x = ((float)(i / raw) / (float)col) - 0.5f;
+
+            float y = ((float)(i / col) / (float)raw) - 0.5f + ((float)unit_size / (float)height);
             float x = ((float)(i % col) / (float)col) - 0.5f;
+
             var rt = frames[i].transform as RectTransform;
             rt.anchoredPosition = new Vector2(x, y) * cameraView.rectTransform.rect.size;
             rt.sizeDelta = new Vector2(unit_size, unit_size);
-            frames[i].text = $"{i+1} : {(int)(results[i])}%";
+            //frames[i].text = $"{i+1} : {(int)(results[i])}%";
+            frames[i].text = $"{(int)(results[i])}%";
 
             if (results[i] == 0)
             {

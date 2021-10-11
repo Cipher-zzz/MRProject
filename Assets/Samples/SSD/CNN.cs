@@ -13,9 +13,10 @@ namespace TensorFlowLite
     {
 
         int[] frameOutput = null;
-        int image_size = 120;
+        int image_size = 120; // Size of Image block for AI model.
         int raw = 0;
         int col = 0;
+        int times = 0;
 
         public readonly struct Result
         {
@@ -50,7 +51,8 @@ namespace TensorFlowLite
 
             //Texture2D myImage = TextureToTexture2D(inputTex);
             Texture2D myImage = RTtoTexture2D(tex);
-            var pixels = myImage.GetRawTextureData<Color32>();
+            //var pixels = myImage.GetRawTextureData<Color32>();
+            var pixels = myImage.GetPixels();
  
             int width = myImage.width;
             int height = myImage.height - 1;
@@ -59,14 +61,36 @@ namespace TensorFlowLite
             col = myImage.width / image_size; // int, number of the detection boxes in one raw.
             float[,] myGrayImage = new float[height + 1, width];
 
+            // Debug timer
+            times += 1;
+            Texture2D textureOut = new Texture2D(width, height + 1);
+            Texture2D textureOut120 = new Texture2D(120, 120);
+            //Debug.Log("Size of input camera");
+            //Debug.Log(height+1);
+            //Debug.Log(width);
+
             for (int i = 0; i < pixels.Length; i++)
             {
-                int y = height - i / width;
+                //int y = height - i / width;
+                int y = i / width;
                 int x = i % width;
-                myGrayImage[y, x] = RGBToGray(pixels[i].r, pixels[i].g, pixels[i].b);
+                float grayPixel = RGBToGray(pixels[i].r, pixels[i].g, pixels[i].b);
+                // float grayPixel = pixels[i].grayscale;
+                myGrayImage[y, x] = grayPixel;
+                Color color = new Color(grayPixel, grayPixel, grayPixel);
+                textureOut.SetPixel(x, y, color);
             }
 
+            // Debug image output
+            //if (times % 50 == 0)
+            //{
+            //    SaveTexture(textureOut,0);
+            //    SaveTexture(myImage, 1);
+            //}
+
             float[,,,] image_input = new float[1, image_size, image_size, 1];
+
+            //float[,,,] image_input_debug = new float[1, image_size, image_size, 1]; //debug
 
             float[,] outputs0 = new float[1, 2];
 
@@ -82,12 +106,17 @@ namespace TensorFlowLite
                 {
                     for (int c = 0; c < image_size; c++)
                     {
-                        image_input[0, r, c, 0] = (float)myGrayImage[(gr * image_size) + r, (gc * image_size) + c] / 255;
+                        image_input[0, r, c, 0] = (float)myGrayImage[(gr * image_size) + r, (gc * image_size) + c];
                     }
                 }
+
+                //if(i == 4) //Debug
+                //{
+                //    image_input_debug = (float[,,,])image_input.Clone();
+                //}
                 interpreter.SetInputTensorData(0, image_input);
                 interpreter.Invoke();
-                outputs0 = new float[1, 2];
+                // outputs0 = new float[1, 2];
                 interpreter.GetOutputTensorData(0, outputs0);
                 //Debug.Log(resultArgMax(outputs0));
                 //Debug.Log(outputs0[0, 0]);
@@ -96,6 +125,25 @@ namespace TensorFlowLite
                 //frameOutput[i] = resultArgMax(outputs0);
                 frameOutput[i] = resultDetails(outputs0);
             }
+
+            // Debug image output
+            //if (times % 50 == 0)
+            //{
+            //    for (int y = 0; y < 120; y++)
+            //    {
+            //        for (int x = 0; x < 120; x++)
+            //        {
+            //            float p = image_input_debug[0, y, x, 0];
+            //            Color color = new Color(p, p, p);
+            //           textureOut120.SetPixel(x, y, color);
+            //        }
+            //    }
+            //    SaveTexture(textureOut120, 2);
+                //Debug.Log("outputs0");
+                //Debug.Log(outputs0[0, 0]);
+                //Debug.Log(outputs0[0, 1]);
+                //Debug.Log("first input" + image_input[0, 0, 0, 0]);
+            //}
 
             // byte[] imageData = Utils.DecodeTexture(inputTex, inputTex.width, inputTex.height, 0, Flip.VERTICAL);
             // Shape shape = new Shape(1, inputTex.width, inputTex.height, 3);
@@ -215,6 +263,21 @@ namespace TensorFlowLite
         public int[] GetResults()
         {
             return frameOutput;
+        }
+
+        private void SaveTexture(Texture2D texture, int index)
+        {
+            byte[] bytes = texture.EncodeToPNG();
+            var dirPath = Application.dataPath + "/RenderOutput";
+            if (!System.IO.Directory.Exists(dirPath))
+            {
+                System.IO.Directory.CreateDirectory(dirPath);
+            }
+            System.IO.File.WriteAllBytes(dirPath + "/R_" + index + ".png", bytes);
+            Debug.Log(bytes.Length / 1024 + "Kb was saved as: " + dirPath);
+#if UNITY_EDITOR
+            UnityEditor.AssetDatabase.Refresh();
+#endif
         }
     }
 }
